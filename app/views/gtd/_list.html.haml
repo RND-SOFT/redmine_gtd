@@ -1,0 +1,32 @@
+= form_tag({}) do
+  = hidden_field_tag 'back_url', url_for(params), :id => nil
+  .autoscroll
+    %table.list.issues
+      %thead
+        %tr
+          %th.checkbox.hide-when-print1
+            = link_to image_tag('toggle_check.png'), {},                    |
+              :onclick => 'toggleIssuesSelection(this); return false;',     |
+              :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}" |
+          - query.inline_columns.each do |column|
+            = column_header(column)
+      - previous_group = false
+      %tbody
+        - issue_list(issues) do |issue, level|
+          - if @query.grouped? && (group = @query.group_by_column.value(issue)) != previous_group
+            - reset_cycle
+            %tr.group.open
+              %td{:colspan => query.inline_columns.size + 2}
+                %span.expander{:onclick => "toggleRowGroup(this);"} &nbsp;
+                = group.blank? ? l(:label_none) : column_content(@query.group_by_column, issue)
+                %span.count= @issue_count_by_group[group]
+                = link_to_function("#{l(:button_collapse_all)}/#{l(:button_expand_all)}", |
+                  "toggleAllRowGroups(this)", :class => 'toggle-all')                     |
+            - previous_group = group
+          %tr{:class => "hascontextmenu #{cycle('odd', 'even')} #{issue.css_classes} #{level > 0 ? "idnt idnt-#{level}" : nil}", :id => "issue-#{issue.id}"}
+            %td.checkbox.hide-when-print= check_box_tag("ids[]", issue.id, false, :id => nil)
+            = raw query.inline_columns.map {|column| "<td class=\"#{column.css_classes}\">#{column_content(column, issue)}</td>"}.join
+          - @query.block_columns.each do |column|
+            - if (text = column_content(column, issue)) && text.present?
+              %tr{:class => current_cycle}
+                %td{:class => column.css_classes, :colspan => @query.inline_columns.size + 1}= text

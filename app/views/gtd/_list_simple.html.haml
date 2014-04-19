@@ -1,0 +1,73 @@
+- if issues && issues.any?
+  %table{width: '100%'}
+    %tr{style: "vertical-align: top;"}
+      %th{width: "45%"}
+        Актуальное на сегодня
+      %th{width: "45%"}
+        Мои задачи
+    %tr{style: "vertical-align: top;"}
+      %td
+        = form_tag('/gtd/sort', id: 'xxt', remote: true) do
+          %ul#actualtasks.connected.list.issues.sortable
+            - for issue in issuesactual
+              %li{class: "hascontextmenu #{cycle('odd', 'even')} #{issue.css_classes}", id: "issue-#{h(issue.id)}"}
+                %span.handle{style: "font-family: Courier;"}
+                  ="#{issue.project.custom_field_values.first.value}"
+                =link_to truncate(issue.subject, :length => 60), issue_path(issue)
+                = hidden_field_tag 'ids[]', issue.id
+      %td
+        = form_tag({}) do
+          %input{id: "search_input", placeholder: "фильтруй"}
+          %ul#alltasks.connected.list.issues.sortable
+            - for issue in issues
+              %li{class: "hascontextmenu #{cycle('odd', 'even')} #{issue.css_classes}", id: "issue-#{h(issue.id)}"}
+                %span.handle{style: "font-family: Courier;"}
+                  ="#{issue.project.custom_field_values.first.value}"
+                = link_to truncate(issue.subject, length: 60), issue_path(issue)
+                = hidden_field_tag 'ids[]', issue.id
+
+- else
+  %p.nodata= l(:label_no_data)
+:javascript
+  // $('.sortable').sortable();
+  //$('#alltasks').sortable({ connectWith: '.connected' });
+  $('#actualtasks, #alltasks').sortable({ connectWith: '.connected' }).bind('dragend.h5s', function() {$("#xxt").submit(); });
+    // alert('asdfsadf');
+    // $('#search_input').fastLiveFilter('#alltasks');
+    
+    //return false;
+  //  });
+  $('#search_input').fastLiveFilter('#alltasks');
+  $('#search_input').focus();
+    //Triggered when the user stopped sorting and the DOM position has changed.
+
+:css
+  .sortable {
+    min-width: 200px;
+    min-height: 100px;
+    font-size: 14px;
+    list-style: none;
+    padding-left: 3px;
+  }
+  .sortable li {
+    padding-bottom: 3px;
+    min-height: 20px;
+  }
+  .sortable li.sortable-placeholder {
+    border: 1px dashed #CCC;
+    background: none;
+    min-height: 20px;
+    visibility: true;
+  }
+  / .handle {
+  /     cursor: move;
+  / }
+  / .sortable td {
+  /   padding-bottom: 3px;
+  /   min-height: 20px;
+  / }
+  / .sortable tr.sortable-placeholder {
+  /   border: 1px dashed #CCC;
+  /   background: none;
+  /   min-height: 20px;
+  / }
