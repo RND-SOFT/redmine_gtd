@@ -23,6 +23,8 @@ class GtdController < ApplicationController
   before_filter :find_issues, :only => [:bulk_edit, :bulk_update, :destroy]
   before_filter :find_project, :only => [:new, :create, :update_form]
 
+  before_filter :import_settings, only: [:sort, :index]
+
   # before_filter :authorize_global, only: :index
 
   # before_filter :authorize, :except => [:index]
@@ -57,12 +59,12 @@ class GtdController < ApplicationController
   STWORK = 3
 
   def sort # oshlykov@iteq.ru
-    params[:ids].each_with_index do |id, index|
-      Issue.update_all(['actualpos=?, status_id = ?', index+1, STWORK], ['id=?', id])
-    end unless params[:ids].blank?
-    Issue.update_all(['actualpos = ?, status_id = ?',nil, 2], 
-      ['issues.assigned_to_id = ? and id NOT IN (?) and status_id = '+STWORK, 
-        User.current.id, (params[:ids].blank? ? 0 : params[:ids])])
+    params[:sortids].each_with_index do |id, index|
+      Issue.update_all(['actualpos=?, status_id = ?', index+1, @settings[:status_work_id]], ['id=?', id])
+    end unless params[:sortids].blank?
+    Issue.update_all(['actualpos = ?, status_id = ?',nil, @settings[:status_standby_id]], 
+      ['issues.assigned_to_id = ? and id NOT IN (?) and status_id = ?', 
+        User.current.id, (params[:sortids].blank? ? 0 : params[:sortids]), @settings[:status_work_id]])
     render nothing: true
   end
 
@@ -88,21 +90,22 @@ class GtdController < ApplicationController
       @issue_pages = Paginator.new @issue_count, @limit, params['page']
       @offset ||= @issue_pages.offset
       @projects_link = []
-      Project.active.each {|p| @projects_link << {short: p.custom_field_values.first.value || p.identifier, url: "/projects/#{p.identifier}/issues/new"} }
+      Project.active.each {|p| @projects_link << {short: p.identifier, url: "/projects/#{p.identifier}/issues/new"} }
 
 
       @issues = @query.issues(:include => [:assigned_to, :tracker, :priority, :category, :fixed_version, :project],
                               :order => sort_clause,
                               :offset => @offset,
-                              conditions: ["status_id < #{STWORK} and issues.assigned_to_id = #{User.current.id}"],
+                              conditions: ["status_id <> '#{@settings[:status_work_id]}' and issues.assigned_to_id = #{User.current.id}"],
                               :limit => @limit)
+      # IN (SELECT id FROM #{IssueStatus.table_name} WHERE is_closed='false')"
       @issue_count_by_group = @query.issue_count_by_group
       @issuesactual = @query.issues(include: [:assigned_to, :tracker, :priority, :category, :fixed_version, :project],
                               order: 'actualpos',
-                              conditions: ["status_id = #{STWORK} and issues.assigned_to_id = #{User.current.id}"],
+                              conditions: ["status_id = '#{@settings[:status_work_id]}' and issues.assigned_to_id = #{User.current.id}"],
                               #conditions: ["actualpos > 0 and issues.assigned_to_id = #{User.current.id}"],
                               limit: 100)
-
+      Rails.logger.error "\n >>> #{@settings.inspect} >>> \n"
       respond_to do |format|
         format.html { render template: 'gtd/index', layout: !request.xhr? }
         format.api  {
@@ -498,4 +501,10 @@ class GtdController < ApplicationController
       end
     end
   end
+
+  def import_settings
+    @settings ||= Setting.plugin_redmine_gtd
+    #@settings[:import][:is_private_by_default] == '1'
+  end
+
 end

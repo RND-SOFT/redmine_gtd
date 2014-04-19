@@ -29,4 +29,9 @@ Redmine::Plugin.register :redmine_gtd do
 	#                         if: Proc.new{ User.current.allowed_to?({:controller: 'contacts', action: 'index'},
   #                                        nil, {:global: true})  && ContactsSetting.contacts_show_in_top_menu? }
 
+  settings default: {
+    status_work_id: 3,
+    status_standby_id: 4
+    }, partial: 'settings/gtd'
+
 end

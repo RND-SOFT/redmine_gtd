@@ -1,37 +1,53 @@
 - if issues && issues.any?
+  %br
+  %br
   %table{width: '100%'}
-    %tr{style: "vertical-align: top;"}
-      %th{width: "45%"}
-        Актуальное на сегодня
-      %th{width: "45%"}
-        Мои задачи
+    %thead
+      %tr{style: "vertical-align: top;"}
+        %th{width: "45%"}
+          Актуальное на сегодня
+        %th{width: "45%"}
+          Мои задачи
     %tr{style: "vertical-align: top;"}
       %td
-        = form_tag('/gtd/sort', id: 'xxt', remote: true) do
-          %ul#actualtasks.connected.list.issues.sortable
-            - for issue in issuesactual
-              %li{class: "hascontextmenu #{cycle('odd', 'even')} #{issue.css_classes}", id: "issue-#{h(issue.id)}"}
-                %span.handle{style: "font-family: Courier;"}
-                  ="#{issue.project.custom_field_values.first.value}"
-                =link_to truncate(issue.subject, :length => 60), issue_path(issue)
-                = hidden_field_tag 'ids[]', issue.id
+        = form_tag('/gtd/sort', id: 'actual_form', remote: true) do
+          %table.list.issues
+            %tbody#actualtasks.connected.sortable{style: "min-height: 22px; display: block;"}
+              - for issue in issuesactual
+                / = labelled_fields_for :issue, @issue do |f|
+                %tr.hascontextmenu{class: "#{cycle('odd', 'even')} #{issue.css_classes}", id: "issue-#{h(issue.id)}"}
+                  %td.handle{style: "font-family: Courier;"}
+                    ="#{issue.project.identifier}"# custom_field_values.first.value}"
+                  %td.id{style: 'width: 100%'}
+                    = link_to truncate(issue.subject, length: 60), issue_path(issue)
+                    = check_box_tag("ids[]", issue.id, false, style: 'display:none;', id: nil)
+                    = hidden_field_tag 'sortids[]', issue.id
+                  %td
+                    = progress_bar(issue.done_ratio, width: '80px')
+                    / # - if @issue.safe_attribute?('done_ratio') && @issue.leaf? && Issue.use_field_for_done_ratio?
+                    / # %p= f.select :done_ratio, ((0..10).to_a.collect {|r| ["#{r*10} %", r*10] }), required: issue.required_attribute?('done_ratio')
       %td
         = form_tag({}) do
-          %input{id: "search_input", placeholder: "фильтруй"}
-          %ul#alltasks.connected.list.issues.sortable
-            - for issue in issues
-              %li{class: "hascontextmenu #{cycle('odd', 'even')} #{issue.css_classes}", id: "issue-#{h(issue.id)}"}
-                %span.handle{style: "font-family: Courier;"}
-                  ="#{issue.project.custom_field_values.first.value}"
-                = link_to truncate(issue.subject, length: 60), issue_path(issue)
-                = hidden_field_tag 'ids[]', issue.id
+          %input{id: "search_input", placeholder: "фильтруй", style: "width:100%"}
+          %table.list.issues
+            %tbody#alltasks.connected.sortable{style: "min-height: 22px; display: block;"}
+              - for issue in issues
+                %tr.hascontextmenu{class: "#{cycle('odd', 'even')} #{issue.css_classes}", id: "issue-#{h(issue.id)}"}
+                  %td.handle{style: "font-family: Courier;"}
+                    ="#{issue.project.identifier}"# custom_field_values.first.value}"
+                  %td.id{style: 'width: 100%'}
+                    = link_to truncate(issue.subject, length: 60), issue_path(issue)
+                    = check_box_tag("ids[]", issue.id, false, style: 'display:none;', id: nil)
+                    = hidden_field_tag 'sortids[]', issue.id
+                  %td
+                    = progress_bar(issue.done_ratio, width: '80px')
 
 - else
   %p.nodata= l(:label_no_data)
 :javascript
   // $('.sortable').sortable();
   //$('#alltasks').sortable({ connectWith: '.connected' });
-  $('#actualtasks, #alltasks').sortable({ connectWith: '.connected' }).bind('dragend.h5s', function() {$("#xxt").submit(); });
+  $('#actualtasks, #alltasks').sortable({ connectWith: '.connected' }).bind('dragend.h5s', function() {$("#actual_form").submit(); });
     // alert('asdfsadf');
     // $('#search_input').fastLiveFilter('#alltasks');
     
@@ -43,31 +59,42 @@
 
 :css
   .sortable {
-    min-width: 200px;
+    / min-width: 200px;
     min-height: 100px;
-    font-size: 14px;
+    / font-size: 14px;
     list-style: none;
     padding-left: 3px;
   }
   .sortable li {
     padding-bottom: 3px;
-    min-height: 20px;
+    min-height: 22px;
   }
   .sortable li.sortable-placeholder {
     border: 1px dashed #CCC;
     background: none;
-    min-height: 20px;
+    min-height: 22px;
     visibility: true;
   }
-  / .handle {
-  /     cursor: move;
+  / .sortable {
+  /   min-width: 200px;
+  /   min-height: 100px;
   / }
-  / .sortable td {
-  /   padding-bottom: 3px;
-  /   min-height: 20px;
-  / }
-  / .sortable tr.sortable-placeholder {
-  /   border: 1px dashed #CCC;
-  /   background: none;
-  /   min-height: 20px;
-  / }
+
+  .handle {
+      cursor: move;
+  }
+  .sortable td {
+    padding-bottom: 3px;
+    min-height: 20px;
+  }
+  .sortable tr.sortable-placeholder {
+    border: 1px dashed #CCC;
+    background: none;
+    min-height: 22px;
+  }
+
+  .sortable div.sortable-placeholder {
+    border: 1px dashed #CCC;
+    background: none;
+    min-height: 22px;
+  }

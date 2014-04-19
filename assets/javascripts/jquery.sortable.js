@@ -23,6 +23,7 @@ $.fn.sortable = function(options) {
 		}
 		var isHandle, index, items = $(this).children(options.items);
 		var placeholder = $('<' + (/^ul|ol$/i.test(this.tagName) ? 'li' : 'div') + ' class="sortable-placeholder">');
+		// if (/^tbody$/i.test(this.tagName)) {placeholder = $('<' + (/^tbody$/i.test(this.tagName) ? 'tr' : 'div') + ' class="sortable-placeholder"></tr>') };
 		items.find(options.handle).mousedown(function() {
 			isHandle = true;
 		}).mouseup(function() {

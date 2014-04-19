@@ -1,0 +1,7 @@
+# encoding: utf-8
+ru:
+  settings:
+    gtd:
+      default_status_work: Статус задач на сегодня
+      default_status_standby: Статус отложенных
+
